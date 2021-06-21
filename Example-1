@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <style>
+   .c{
+   	margin-top:100px;
+   	background-color: black;
+   	color:white;
+   	font-size:20px;
+   }
+   .c1{
+   margin-top:120px;
+   }
+   </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+	<script src="./scripts/angular.min.js"></script>
+</head>
+
+<body ng-app="mymoudle" ng-controller="myctrl">
+<div >
+<button class="btn btn-success" ng-click="msgreq()">MSG-GET-REQUEST</button>
+<input type="text" ng-model="id" placeholder="Enter ID To Search.."/>
+<button class="btn btn-success" ng-click="msgreqbyid(id)">MSG-GET-REQUEST-ID</button>
+<button class="btn btn-primary" ng-click="alldata()">MSG-GET-ALL-DATA</button>
+<button class="btn btn-success" ng-click="msgreq()">MSG-DELETE-REQUEST</button>
+</div>
+<div>
+<hr/>
+<br/>
+<form>
+  <div class="form-group">
+    <label for="pid">PRODUCT ID:</label>
+    <input type="text" class="form-control" id="pid" ng-model="pid">
+  </div>
+  <div class="form-group">
+    <label for="pname">PRODUCT NAME:</label>
+    <input type="text" class="form-control" id="pname" ng-model="pname">
+  </div>
+  
+  
+  <div class="form-group">
+    <label for="price">PRODUCT PRICE:</label>
+    <input type="text" class="form-control" id="price" ng-model="price">
+  </div>
+  
+	<button class="btn btn-success" ng-click="postreq(pid,pname,price)">STORE</button>
+</form>
+{{msg}}
+
+
+</div>
+ 
+
+
+<div class="c">
+	{{msg1}}
+</div>
+
+<!-- Bootstrap table Product Details -->
+<div class="c1">
+<div class="container">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>PID</th>
+        <th>PNAME</th>
+        <th>PRICE</th>
+      </tr>
+    </thead>
+    <tbody>
+    
+      <tr ng-repeat="product in products">
+        <td>{{product.id}}</td>
+        <td>{{product.name}}</td>
+        <td>{{product.price | currency :"&#8377;"}}</td>
+      </tr>
+     
+    </tbody>
+  </table>
+</div>
+
+
+</div>
+	<script>
+		var md = angular.module("mymoudle",[]);
+		md.controller("myctrl",function($scope,$http){
+			$scope.msg1 ="under process..";
+			$scope.msgreq=function(){
+			alert('Sending Req....');
+			$http({
+					url:'http://localhost:9009/AngularJSWithRESTAPI/webapi/myresource/msg',
+					method:'GET'
+			}).then(function success(response){
+				//success
+			   alert('success');
+			  console.log(response);
+				$scope.msg1 = response.data;
+			},function error(response){
+				//failure
+				alert('failure');
+				console.log(response);
+			});		
+					
+			};
+			
+			$scope.msgreqbyid=function(id){
+				alert('from msg req');
+			  $http({
+					method:'GET',
+					url   :'http://localhost:9009/AngularJSWithRESTAPI/webapi/myresource/productId/'+id  
+			  }).then(function success(response){
+				  alert('success get by id');
+				  console.log(response);
+				 	$scope.productId=response.data.id;
+				 	$scope.productName=response.data.name;
+				 	$scope.productPrice=response.data.price;
+			  },function error(response){
+				  alert('failure  get by id');
+				  console.log(response);
+				  
+			  });
+				
+			};
+			
+			$scope.alldata=function(){
+		
+				alert('from alldata req');
+				  $http({
+						method:'GET',
+						url   :'http://localhost:9009/AngularJSWithRESTAPI/webapi/myresource/alldata'  
+				  }).then(function success(response){
+					  alert('success getall data');
+					  console.log(response);
+					 $scope.products=response.data;
+				  },function error(response){
+					  alert('failure  get all  data');
+					  console.log(response);
+					  
+				  });
+				
+			};
+			
+			$scope.postreq=function(pid,pname,price){
+				var jsondata = {"pid":pid,"pname":pname,"price":price};
+				alert('from post req');
+				  $http({
+						method:'POST',
+						url   :'http://localhost:9009/AngularJSWithRESTAPI/webapi/myresource/createproduct',
+						data  : JSON.stringify(jsondata),
+						headers :{'Content-Type':'application/json'}
+				  }).then(function success(response){
+					  alert('success getall data');
+					  console.log(response);
+					 $scope.msg=response.data;
+				  },function error(response){
+					  alert('failure  get all  data');
+					  console.log(response);
+					  
+				  });
+				
+			};
+			
+			
+			
+		});
+		
+	</script>
+	
+	
+</body>
+</html>
+
+MyResource.java
+package com.genc.AngularJSWithRESTAPI;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+/**
+ * Root resource (exposed at "myresource" path)
+ */
+@Path("myresource")
+public class MyResource {
+
+	/**
+	 * Method handling HTTP GET requests. The returned object will be sent to the
+	 * client as "text/plain" media type.
+	 *
+	 * @return String that will be returned as a text/plain response.
+	 */
+
+	@Path("/msg")
+	@GET
+	@Produces(MediaType.TEXT_PLAIN)
+	public String getIt() {
+		System.out.println("get request  recieved...");
+		return "WELCOME TO DASHBOARD....";
+	}
+
+	@Path("/productId/{id}")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Product getIt(@PathParam("id") int id) {
+
+		if (id == 1001)
+			return new Product(1001, "LUX", 30.0);
+		else if (id == 1002)
+			return new Product(1002, "SANTORO", 40.0);
+		else
+			return new Product();
+
+	}
+
+	@Path("/alldata")
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<Product> getIt1() {
+
+		List<Product> list = new ArrayList();
+		list.add(new Product(1001, "LUX", 30));
+		list.add(new Product(1002, "DOVE", 30));
+		list.add(new Product(1003, "HARD-DISK", 5000));
+		list.add(new Product(1004, "RAM", 2000));
+		return list;
+	}
+	
+	/*
+	@Path("/createproduct")
+	@POST
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response getIt2(Product product) {
+		    System.out.println("str:"+product);
+		    ObjectMapper omapper = new ObjectMapper();
+		    String onode="";
+			try {
+				onode = omapper.writeValueAsString(product);
+			} catch (JsonProcessingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		    return Response.status(Response.Status.OK).entity(onode).build();
+	}
+	*/
+	@Path("/createproduct")
+	@POST
+	@Produces(MediaType.TEXT_PLAIN)
+	@Consumes(MediaType.APPLICATION_JSON)
+	public String getIt2(Product product) {
+
+		if(product!=null) {
+			return "SUCCESSFULLY STORED IN DB";
+		}else {
+			return "NOT STORE IN DB  SOME ERROR";
+		}
+	}
+
+}
+
+
+pom.xml
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.genc</groupId>
+	<artifactId>AngularJSWithRESTAPI</artifactId>
+	<packaging>war</packaging>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>AngularJSWithRESTAPI</name>
+
+	<build>
+		<finalName>AngularJSWithRESTAPI</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.5.1</version>
+				<inherited>true</inherited>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.glassfish.jersey</groupId>
+				<artifactId>jersey-bom</artifactId>
+				<version>${jersey.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.glassfish.jersey.containers</groupId>
+			<artifactId>jersey-container-servlet-core</artifactId>
+			<!-- use the following artifactId if you don't need servlet 2.x compatibility -->
+			<!-- artifactId>jersey-container-servlet</artifactId -->
+		</dependency>
+		<!-- uncomment this to get JSON support -->
+		<dependency>
+			<groupId>org.glassfish.jersey.media</groupId>
+			<artifactId>jersey-media-moxy</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.12.3</version>
+		</dependency>
+
+	</dependencies>
+	<properties>
+		<jersey.version>2.16</jersey.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+</project>
+===================================================================================================
